@@ -23,54 +23,6 @@ impl Row {
 
 
 impl  XMLString for Row {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
     fn to_xml(self, writer: &mut XmlWriter)  {
         writer.start_element("row");
         for cell in self.cells {
