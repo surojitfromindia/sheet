@@ -1,7 +1,6 @@
-use std::{collections::HashMap, mem, ops::Add};
+use std::{collections::HashMap, mem};
 
 use xmlwriter::Options;
-
 
 #[derive(Debug)]
 pub struct SharedStrings {
@@ -11,7 +10,7 @@ pub struct SharedStrings {
     pub total_counter: u32,
 }
 
-static SST_XMLNS : &str = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+static SST_XMLNS: &str = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
 impl SharedStrings {
     pub fn new() -> Self {
@@ -39,7 +38,6 @@ impl SharedStrings {
             }
         }
     }
-
     pub fn to_xml(&self) -> String {
         let mut writer = xmlwriter::XmlWriter::new(Options::default());
         // todo: write declarion manually.
