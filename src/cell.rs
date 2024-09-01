@@ -1,8 +1,15 @@
-use xmlwriter::*;
 use crate::traits;
 use traits::XMLString;
+use xmlwriter::*;
+
+pub enum CellType {
+    CString,
+    CNumber,
+}
+
 pub struct Cell {
-    value: String,
+    pub cell_type: CellType,
+    pub value: String,
     formula: Option<String>,
     attributes: CellAttributes,
 }
@@ -15,6 +22,7 @@ struct CellAttributes {
 impl Cell {
     pub fn new(value: String, reference: String) -> Cell {
         Cell {
+            cell_type: CellType::CString,
             value,
             formula: None,
             attributes: CellAttributes { reference },
@@ -24,14 +32,11 @@ impl Cell {
     pub fn add_formula(&mut self, formula: String) {
         self.formula = Some(formula);
     }
-
-    
 }
 
-
-impl  XMLString for Cell {
-    fn to_xml(self, writer: &mut XmlWriter)  {
-        writer.start_element("cell");
+impl XMLString for Cell {
+    fn to_xml(self, writer: &mut XmlWriter) {
+        writer.start_element("c");
         writer.write_attribute("reference", &self.attributes.reference);
         if let Some(formula) = self.formula {
             writer.start_element("formula");

@@ -5,7 +5,7 @@ use traits::XMLString;
 
 
 pub struct Row {
-    cells: Vec<Cell>,
+    pub cells: Vec<Cell>,
 }
 
 impl Row {
@@ -19,12 +19,13 @@ impl Row {
     pub fn add_cells(&mut self, cells: Vec<Cell>) {
         self.cells.extend(cells);
     }
+    
 }
 
 
 impl  XMLString for Row {
     fn to_xml(self, writer: &mut XmlWriter)  {
-        writer.start_element("row");
+        writer.start_element("r");
         for cell in self.cells {
             cell.to_xml(writer);
         }
