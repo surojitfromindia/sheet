@@ -1,85 +1,171 @@
+pub mod cell;
+pub mod row;
+pub mod traits;
+pub mod xml_templates;
+use std::collections::HashSet;
 use xmlwriter::*;
 
+use cell::Cell;
+use row::Row;
+use traits::XMLString;
+use xml_templates::content_type::*;
+
 fn main() {
-    let mut writer = XmlWriter::new(Options::default());
-    writer.start_element("worksheet");
-    let mut cell1 = Cell::new("1".to_string(), "A1".to_string());
-    cell1.add_formula("=B1+C1".to_string());
+    let mut work_book = WorkBook::new();
+    let mut work_sheet_1 = WorkSheet::blank("Sheet1");
 
-    let mut cell2 = Cell::new("2".to_string(), "B1".to_string());
-    cell2.add_formula("=A1+C1".to_string());
+    let row = work_sheet_1.add_blank_row();
+    let cell1 = Cell::new("Gi".to_string(), "A1".to_string());
+    row.add_cell(cell1);
 
-    let mut cell3 = Cell::new("3".to_string(), "C1".to_string());
-    cell3.add_formula("=A1+B1".to_string());
-    let cell4 = Cell::new("4".to_string(), "D1".to_string());
+    let mut xml_writer = XmlWriter::new(Options::default());
 
-    let mut row1 = Row::new();
-    row1.add_cell(cell1);
-    row1.add_cell(cell2);
-    row1.add_cells(vec![cell3, cell4]);
-    row1.to_xml(&mut writer);
 
-    writer.end_element();
-    println!("{}", writer.end_document())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // generate content xml
+    // let mut content_type = ContentType::new();
+    // content_type.add_sheet("sheet1.xml");
+    // content_type.add_sheet("sheet2.xml");
+    // println!("{}", content_type.to_xml());
 }
 
-struct Cell {
-    value: String,
-    formula: Option<String>,
-    attributes: CellAttributes,
+struct WorkBook<'wb> {
+    work_sheets: Vec<WorkSheet>,
+    work_sheet_names: HashSet<&'wb String>,
 }
 
-// excel cell attributes
-struct CellAttributes {
-    reference: String,
-}
-
-impl Cell {
-    pub fn new(value: String, reference: String) -> Cell {
-        Cell {
-            value,
-            formula: None,
-            attributes: CellAttributes { reference },
+impl<'wb> WorkBook<'wb> {
+    pub fn new() -> Self {
+        WorkBook {
+            work_sheets: vec![],
+            work_sheet_names: HashSet::new(),
         }
     }
 
-    pub fn add_formula(&mut self, formula: String) {
-        self.formula = Some(formula);
+    pub fn add_sheet(&'wb mut self, mut work_sheet: WorkSheet) {
+        if self.work_sheet_names.contains(&work_sheet.name) {
+            work_sheet.name = format!("sheet{}", self.work_sheet_names.len())
+        }
+
+        // append this work sheet
+        self.work_sheets.push(work_sheet);
+        let last = self.work_sheets.last().unwrap();
+
+        self.work_sheet_names.insert(&last.name);
     }
 
-    pub fn to_xml(self, writer: &mut XmlWriter) {
-        writer.start_element("cell");
-        writer.write_attribute("reference", &self.attributes.reference);
-        if let Some(formula) = self.formula {
-            writer.start_element("formula");
-            writer.write_text(&formula);
-            writer.end_element();
+    fn to_xml(self, mut writer: XmlWriter) -> String {
+        writer.write_declaration();
+        writer.start_element("WorkBook");
+        for ws in self.work_sheets {
+            ws.to_xml(&mut writer);
         }
-        writer.write_text(&self.value);
         writer.end_element();
+        writer.end_document()
     }
 }
 
-struct Row {
-    cells: Vec<Cell>,
+struct WorkSheet {
+    name: String,
+    rows: Vec<Row>,
 }
 
-impl Row {
-    pub fn new() -> Row {
-        Row { cells: Vec::new() }
+impl WorkSheet {
+    // create a new
+    pub fn blank(name: &str) -> Self {
+        // check if the name already exists in the work_sheet_names of the work book
+
+        WorkSheet {
+            name: name.to_string(),
+            rows: vec![],
+        }
     }
 
-    pub fn add_cell(&mut self, cell: Cell) {
-        self.cells.push(cell);
+    /// return the newly created blank row mut.
+    pub fn add_blank_row(&mut self) -> &mut Row {
+        let row = Row::new();
+        self.rows.push(row);
+        self.rows.last_mut().unwrap()
     }
-    pub fn add_cells(&mut self, cells: Vec<Cell>) {
-        self.cells.extend(cells);
-    }
+}
 
-    pub fn to_xml(self, writer: &mut XmlWriter) {
-        writer.start_element("row");
-        for cell in self.cells {
-            cell.to_xml(writer);
+impl XMLString for WorkSheet {
+    fn to_xml(self, writer: &mut xmlwriter::XmlWriter) {
+        writer.start_element("workSheet");
+        for row in self.rows {
+            row.to_xml(writer);
         }
         writer.end_element();
     }
