@@ -4,13 +4,10 @@ pub mod traits;
 pub mod work_book;
 pub mod work_sheet;
 pub mod xml_templates;
-use xml_templates::content_type::ContentType;
-use xmlwriter::*;
 
 use cell::Cell;
 use work_book::WorkBook;
 use work_sheet::WorkSheet;
-use xml_templates::shared_string::SharedStrings;
 
 fn main() {
     let mut work_book = WorkBook::new();

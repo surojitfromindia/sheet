@@ -44,12 +44,12 @@ impl ContentType {
     }
 
     // add a new sheet information with the work book
-    pub fn add_sheet(&mut self, sheet_name: &str) -> &Self {
+    pub fn add_sheet(&mut self, sheet_name: &str) {
         self.overrides.push(Override {
             content_type: format!("/x1/worksheets/{}", WORK_SHEET_CONTENT_TYPE.to_string()),
             part_name: sheet_name.to_string(),
         });
-        self
+        
     }
 
     // retunr the complete content type.

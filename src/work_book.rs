@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use xmlwriter::{Options, XmlWriter};
 
@@ -11,10 +11,8 @@ use crate::{
 pub struct WorkBook {
     pub work_sheets: Vec<WorkSheet>,
     pub work_sheet_names: HashSet<String>,
-    pub shared_string: SharedStrings,
-    // create a blank Content Type
+    shared_string: SharedStrings,
     content_type: ContentType,
-
 }
 
 impl WorkBook {
@@ -22,6 +20,8 @@ impl WorkBook {
         WorkBook {
             work_sheets: vec![],
             work_sheet_names: HashSet::new(),
+
+            // other xmls
             shared_string: SharedStrings::new(),
             content_type: ContentType::new(),
         }
@@ -31,6 +31,8 @@ impl WorkBook {
         if self.work_sheet_names.contains(&work_sheet.name) {
             work_sheet.name = format!("Sheet{}", self.work_sheet_names.len() + 1)
         }
+        // register this sheet to content type.
+        self.content_type.add_sheet(&work_sheet.name.as_str());
         // update the share string.
         let row_itr = work_sheet.rows.iter_mut();
         for row in row_itr {
@@ -57,7 +59,7 @@ impl WorkBook {
         writer.write_attribute("appName", "RustSheet");
         writer.end_element();
     }
-   
+
     fn create_book_views(&self, writer: &mut XmlWriter) {
         writer.start_element("bookViews");
         writer.start_element("workbookView");
@@ -65,7 +67,7 @@ impl WorkBook {
         writer.end_element();
         writer.end_element();
     }
-   
+
     fn create_sheets(&self, writer: &mut XmlWriter) {
         writer.start_element("sheets");
         let mut r_id: u8 = 2;
@@ -96,11 +98,12 @@ impl WorkBook {
         writer.end_document()
     }
 
-    
     pub fn save(mut self) {
         let work_book_xml = self.to_xml();
 
         let ss_xml = self.shared_string.to_xml();
+
+        let content_type_xml = self.content_type.to_xml();
 
         // todo: buit other xml here
     }
