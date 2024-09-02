@@ -24,7 +24,7 @@ impl Row {
 
 
 impl  XMLString for Row {
-    fn to_xml(self, writer: &mut XmlWriter)  {
+     fn to_xml(self, writer: &mut XmlWriter)  {
         writer.start_element("r");
         for cell in self.cells {
             cell.to_xml(writer);

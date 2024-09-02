@@ -38,7 +38,7 @@ impl SharedStrings {
             }
         }
     }
-    pub fn to_xml(&self) -> String {
+    pub fn to_xml(self) -> String {
         let mut writer = xmlwriter::XmlWriter::new(Options::default());
         // todo: write declarion manually.
         writer.write_declaration();
