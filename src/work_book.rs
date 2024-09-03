@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use xmlwriter::{Options, XmlWriter};
 
 use crate::{
-    cell::CellType,
+    cell::CellValue,
     work_sheet::WorkSheet,
     xml_templates::{
         content_type::ContentType, relation_ship::RelationShip, shared_string::SharedStrings,
@@ -44,9 +44,9 @@ impl WorkBook {
         for row in row_itr {
             let cell_itr = row.cells.iter_mut();
             for cell in cell_itr {
-                match cell.cell_type {
-                    CellType::CString => {
-                        self.shared_string.add_string(&mut cell.value);
+                match &mut cell.value {
+                    CellValue::CString(v) => {
+                        self.shared_string.add_string(v);
                     }
                     _ => {}
                 }
@@ -119,5 +119,10 @@ impl WorkBook {
 
         print!("rr {}", root_rs_xml);
         println!("wrr {}", work_book_rs_xml);
+        println!("ss {}", ss_xml);
+
+        for work_sheet in self.work_sheets.into_iter() {
+            println!("ws {}", work_sheet.to_xml());
+        }
     }
 }

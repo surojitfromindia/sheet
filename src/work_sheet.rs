@@ -2,10 +2,10 @@ use xmlwriter::{Options, XmlWriter};
 
 use crate::{row::Row, traits::XMLString};
 
-
 pub struct WorkSheet {
     pub name: String,
     pub rows: Vec<Row>,
+    next_row: usize,
 }
 
 impl WorkSheet {
@@ -14,12 +14,14 @@ impl WorkSheet {
         WorkSheet {
             name: name.to_string(),
             rows: vec![],
+            next_row: 1,
         }
     }
 
     // return the newly created blank row mut.
     pub fn add_blank_row(&mut self) -> &mut Row {
-        let row = Row::new();
+        let row = Row::new(self.next_row);
+        self.next_row += 1;
         self.rows.push(row);
         self.rows.last_mut().unwrap()
     }

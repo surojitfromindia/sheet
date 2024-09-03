@@ -16,28 +16,16 @@ fn main() {
     let mut work_sheet_1 = WorkSheet::blank("Sheet1");
 
     // add rows and cells to the worksheets
-    work_sheet_1.add_blank_row().add_cells(vec![
-        Cell::new("Octobar".to_string(), "A1".to_string()),
-        Cell::new("Nov".to_string(), "A2".to_string()),
-        Cell::new("Dec".to_string(), "A3".to_string()),
-        Cell::new("Nov".to_string(), "A4".to_string()),
-        Cell::new("Jan".to_string(), "A5".to_string()),
-    ]);
-
-    // another blank row and more cells to that row.
-    work_sheet_1.add_blank_row().add_cells(vec![
-        Cell::new("Pen".to_string(), "A1".to_string()),
-        Cell::new("Dan".to_string(), "A2".to_string()),
-        Cell::new("Dec".to_string(), "A3".to_string()),
-        Cell::new("Copy cat".to_string(), "A4".to_string()),
-        Cell::new("Jan".to_string(), "A5".to_string()),
-    ]);
-
-    let work_sheet_2 = WorkSheet::blank("Hey bro");
-
+    work_sheet_1
+        .add_blank_row()
+        .add_cells(vec![
+            Cell::of_string("Octobar".to_string()),
+            Cell::of_string("Nov".to_string()),
+            Cell::of_number("32".to_string()).unwrap(),
+        ])
+        .unwrap();
 
     work_book.add_sheet(work_sheet_1);
-    work_book.add_sheet(work_sheet_2);
 
     work_book.save();
 }
