@@ -4,11 +4,13 @@ use xmlwriter::{Options, XmlWriter};
 
 pub struct ContentType {
     overrides: Vec<Override>,
+    next_sheet_number : i32,
 }
 
 struct Override {
     content_type: String,
     part_name: String,
+    
 }
 
 static WORK_BOOK_CONTENT_TYPE: &str =
@@ -23,6 +25,7 @@ static STYLE_CONTENT_TYPE: &str =
 impl ContentType {
     pub fn new() -> Self {
         ContentType {
+            next_sheet_number : 1,
             overrides: vec![
                 // work book
                 Override {
@@ -44,11 +47,14 @@ impl ContentType {
     }
 
     // add a new sheet information with the work book
-    pub fn add_sheet(&mut self, sheet_name: &str) {
+    pub fn add_sheet(&mut self) {
         self.overrides.push(Override {
-            content_type: format!("/x1/worksheets/{}", WORK_SHEET_CONTENT_TYPE.to_string()),
-            part_name: sheet_name.to_string(),
+            content_type:  WORK_SHEET_CONTENT_TYPE.to_string(),
+            // sheet1, ... sheet12
+            part_name: format!("/x1/worksheets/sheet{}",self.next_sheet_number),
         });
+        // increase the sheet counter by 1 
+        self.next_sheet_number+=1;
         
     }
 

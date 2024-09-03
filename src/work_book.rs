@@ -5,7 +5,9 @@ use xmlwriter::{Options, XmlWriter};
 use crate::{
     cell::CellType,
     work_sheet::WorkSheet,
-    xml_templates::{content_type::ContentType, shared_string::SharedStrings},
+    xml_templates::{
+        content_type::ContentType, relation_ship::RelationShip, shared_string::SharedStrings,
+    },
 };
 
 pub struct WorkBook {
@@ -13,6 +15,8 @@ pub struct WorkBook {
     pub work_sheet_names: HashSet<String>,
     shared_string: SharedStrings,
     content_type: ContentType,
+    root_relation_ship: RelationShip,
+    work_book_relation_ship: RelationShip,
 }
 
 impl WorkBook {
@@ -24,6 +28,8 @@ impl WorkBook {
             // other xmls
             shared_string: SharedStrings::new(),
             content_type: ContentType::new(),
+            root_relation_ship: RelationShip::new(),
+            work_book_relation_ship: RelationShip::new(),
         }
     }
 
@@ -32,7 +38,7 @@ impl WorkBook {
             work_sheet.name = format!("Sheet{}", self.work_sheet_names.len() + 1)
         }
         // register this sheet to content type.
-        self.content_type.add_sheet(&work_sheet.name.as_str());
+        self.content_type.add_sheet();
         // update the share string.
         let row_itr = work_sheet.rows.iter_mut();
         for row in row_itr {
@@ -105,6 +111,13 @@ impl WorkBook {
 
         let content_type_xml = self.content_type.to_xml();
 
-        // todo: buit other xml here
+        let root_rs_xml = self.root_relation_ship.to_root_xml();
+
+        let work_book_rs_xml = self
+            .work_book_relation_ship
+            .to_work_book_rel_xml(1, self.work_sheets.len());
+
+        print!("rr {}", root_rs_xml);
+        println!("wrr {}", work_book_rs_xml);
     }
 }

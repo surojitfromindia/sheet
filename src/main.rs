@@ -33,7 +33,11 @@ fn main() {
         Cell::new("Jan".to_string(), "A5".to_string()),
     ]);
 
+    let work_sheet_2 = WorkSheet::blank("Hey bro");
+
+
     work_book.add_sheet(work_sheet_1);
+    work_book.add_sheet(work_sheet_2);
 
     work_book.save();
 }
