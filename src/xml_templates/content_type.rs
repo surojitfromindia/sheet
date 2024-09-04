@@ -4,13 +4,12 @@ use xmlwriter::{Options, XmlWriter};
 
 pub struct ContentType {
     overrides: Vec<Override>,
-    next_sheet_number : i32,
+    next_sheet_number: i32,
 }
 
 struct Override {
     content_type: String,
     part_name: String,
-    
 }
 
 static WORK_BOOK_CONTENT_TYPE: &str =
@@ -21,11 +20,12 @@ static SS_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
 static STYLE_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml";
+static RS_CONTENT_TYPE: &str = "application/vnd.openxmlformats-package.relationships+xml";
 
 impl ContentType {
     pub fn new() -> Self {
         ContentType {
-            next_sheet_number : 1,
+            next_sheet_number: 1,
             overrides: vec![
                 // work book
                 Override {
@@ -37,10 +37,9 @@ impl ContentType {
                     content_type: SS_CONTENT_TYPE.to_string(),
                     part_name: String::from("/x1/sharedStrings.xml"),
                 },
-                // styles
                 Override {
-                    content_type: STYLE_CONTENT_TYPE.to_string(),
-                    part_name: String::from("/x1/styles.xml"),
+                    content_type: RS_CONTENT_TYPE.to_string(),
+                    part_name: String::from("/x1/_rels/workbook.xml.relsl"),
                 },
             ],
         }
@@ -49,13 +48,12 @@ impl ContentType {
     // add a new sheet information with the work book
     pub fn add_sheet(&mut self) {
         self.overrides.push(Override {
-            content_type:  WORK_SHEET_CONTENT_TYPE.to_string(),
+            content_type: WORK_SHEET_CONTENT_TYPE.to_string(),
             // sheet1, ... sheet12
-            part_name: format!("/x1/worksheets/sheet{}",self.next_sheet_number),
+            part_name: format!("/x1/worksheets/sheet{}", self.next_sheet_number),
         });
-        // increase the sheet counter by 1 
-        self.next_sheet_number+=1;
-        
+        // increase the sheet counter by 1
+        self.next_sheet_number += 1;
     }
 
     // retunr the complete content type.
@@ -67,6 +65,10 @@ impl ContentType {
 
         // around types the whole xml goes
         writer.start_element("Types");
+        writer.write_attribute(
+            "xmlns",
+            "http://schemas.openxmlformats.org/package/2006/content-types",
+        );
 
         // write 2 defaults
         writer.start_element("Default");

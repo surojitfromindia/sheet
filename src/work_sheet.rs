@@ -48,11 +48,9 @@ impl WorkSheet {
             "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac",
         );
 
-        writer.start_element("sheets");
+        writer.start_element("sheetData");
         for row in self.rows {
-            writer.start_element("sheet");
             row.to_xml(&mut writer);
-            writer.end_element();
         }
         writer.end_element();
 

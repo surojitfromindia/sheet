@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-
-use xmlwriter::{Options, XmlWriter};
+use std::{collections::HashSet, io::Write};
 
 use crate::{
     cell::CellValue,
@@ -9,6 +7,8 @@ use crate::{
         content_type::ContentType, relation_ship::RelationShip, shared_string::SharedStrings,
     },
 };
+use xmlwriter::{Options, XmlWriter};
+use zip::write::SimpleFileOptions;
 
 pub struct WorkBook {
     pub work_sheets: Vec<WorkSheet>,
@@ -115,14 +115,57 @@ impl WorkBook {
 
         let work_book_rs_xml = self
             .work_book_relation_ship
-            .to_work_book_rel_xml(1, self.work_sheets.len());
+            .to_work_book_rel_xml(0, self.work_sheets.len());
 
-        print!("rr {}", root_rs_xml);
-        println!("wrr {}", work_book_rs_xml);
-        println!("ss {}", ss_xml);
+        let mut zip = zip::ZipWriter::new(std::fs::File::create("work_book.xlsx").unwrap());
 
-        for work_sheet in self.work_sheets.into_iter() {
-            println!("ws {}", work_sheet.to_xml());
+        // content type root
+        zip.start_file("[Content_Types].xml", SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(content_type_xml.as_bytes()).unwrap();
+
+        //_rels root
+        zip.add_directory("_rels/", SimpleFileOptions::default())
+            .unwrap();
+        zip.start_file("_rels/.rels", SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(root_rs_xml.as_bytes()).unwrap();
+
+        // folder for x1
+        zip.add_directory("xl/", SimpleFileOptions::default())
+            .unwrap();
+        zip.add_directory("xl/_rels/", SimpleFileOptions::default())
+            .unwrap();
+        zip.add_directory("xl/worksheets/", SimpleFileOptions::default())
+            .unwrap();
+        zip.add_directory("xl/theme/", SimpleFileOptions::default())
+            .unwrap();
+
+        // add relation ship for workbook
+        zip.start_file("xl/_rels/workbook.xml.rels", SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(work_book_rs_xml.as_bytes()).unwrap();
+
+        // add sheets
+        for (i, work_sheet) in self.work_sheets.into_iter().enumerate() {
+            let sheet_xml = work_sheet.to_xml();
+            let sheet_name = format!("xl/worksheets/sheet{}.xml", i + 1);
+            zip.start_file(sheet_name, SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(sheet_xml.as_bytes()).unwrap();
         }
+
+        // add shared strings
+        zip.start_file("xl/sharedStrings.xml", SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(ss_xml.as_bytes()).unwrap();
+
+        // add workbook
+        zip.start_file("xl/workbook.xml", SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(work_book_xml.as_bytes()).unwrap();
+
+        // done , save the file in the disk.
+        zip.finish().unwrap();
     }
 }

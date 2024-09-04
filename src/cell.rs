@@ -56,7 +56,7 @@ impl Cell {
 impl XMLString for Cell {
     fn to_xml(self, writer: &mut XmlWriter) {
         writer.start_element("c");
-        writer.write_attribute("reference", &self.attributes.reference.unwrap());
+        writer.write_attribute("r", &self.attributes.reference.unwrap());
         if let Some(formula) = self.formula {
             writer.start_element("formula");
             writer.write_text(&formula);

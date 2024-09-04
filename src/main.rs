@@ -22,6 +22,7 @@ fn main() {
             Cell::of_string("Octobar".to_string()),
             Cell::of_string("Nov".to_string()),
             Cell::of_number("32".to_string()).unwrap(),
+            Cell::of_string("Nov".to_string()),
         ])
         .unwrap();
 

@@ -5,14 +5,14 @@ use xmlwriter::*;
 
 pub struct Row {
     pub cells: Vec<Cell>,
-    row_reference: usize,
+    row_number: usize,
     col_reference: char,
 }
 
 impl Row {
-    pub fn new(row_reference: usize) -> Row {
+    pub fn new(row_number: usize) -> Row {
         Row {
-            row_reference,
+            row_number,
             col_reference: 'A',
             cells: Vec::new(),
         }
@@ -24,7 +24,7 @@ impl Row {
         // if not, return an error
         for cell in cells.iter_mut() {
             if let Some(reference) = cell.attributes.reference.as_ref() {
-                if !reference.ends_with(&self.row_reference.to_string()) {
+                if !reference.ends_with(&self.row_number.to_string()) {
                     return Err(format!("Invalid reference for row: {}", reference));
                 }
             } else {
@@ -55,13 +55,17 @@ impl Row {
     pub fn get_next_cell_ref(&mut self) -> String {
         let col_reference = self.col_reference;
         self.col_reference = (self.col_reference as u8 + 1) as char;
-        format!("{}{}", col_reference, self.row_reference)
+        format!("{}{}", col_reference, self.row_number)
     }
 }
 
 impl XMLString for Row {
     fn to_xml(self, writer: &mut XmlWriter) {
-        writer.start_element("r");
+        writer.start_element("row");
+        writer.write_attribute("r", &self.row_number.to_string());
+        writer.write_attribute("collapsed", "false");
+        writer.write_attribute("customFormat", "false");
+        writer.write_attribute("hidden", "false");
         for cell in self.cells {
             cell.to_xml(writer);
         }
