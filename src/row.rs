@@ -63,9 +63,6 @@ impl XMLString for Row {
     fn to_xml(self, writer: &mut XmlWriter) {
         writer.start_element("row");
         writer.write_attribute("r", &self.row_number.to_string());
-        writer.write_attribute("collapsed", "false");
-        writer.write_attribute("customFormat", "false");
-        writer.write_attribute("hidden", "false");
         for cell in self.cells {
             cell.to_xml(writer);
         }

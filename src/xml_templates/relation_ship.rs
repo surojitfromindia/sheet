@@ -23,7 +23,7 @@ impl RelationShip {
 
     #[inline]
     pub fn to_root_xml(mut self) -> String {
-        // x1/workbook.xml
+        // xl/workbook.xml
         let mut writer = XmlWriter::new(Options::default());
 
         writer.write_declaration();
@@ -34,7 +34,7 @@ impl RelationShip {
         writer.start_element("Relationship");
         writer.write_attribute("Id", self.next_id().as_str());
         writer.write_attribute("Type", RS_OFFICE_DOCUMENT);
-        writer.write_attribute("Target", "x1/workbook.xml");
+        writer.write_attribute("Target", "xl/workbook.xml");
         // TODO: add more.
         writer.end_document()
     }
@@ -43,9 +43,16 @@ impl RelationShip {
     pub fn to_work_book_rel_xml(mut self, no_of_themes: u32, no_of_sheets: usize) -> String {
         let mut writer = XmlWriter::new(Options::default());
 
-        writer.write_declaration();
         writer.start_element("Relationships");
         writer.write_attribute("xmlns", RSS_XMLNS);
+
+        for i in 1..=no_of_sheets {
+            writer.start_element("Relationship");
+            writer.write_attribute("Id", self.next_id().as_str());
+            writer.write_attribute("Type", RS_OFFICE_DOCUMENT_WS);
+            writer.write_attribute("Target", format!("worksheets/sheet{}.xml", i).as_str());
+            writer.end_element();
+        }
 
         // styles
         // writer.start_element("Relationship");
@@ -64,13 +71,7 @@ impl RelationShip {
         }
 
         // worksheets
-        for i in 1..=no_of_sheets {
-            writer.start_element("Relationship");
-            writer.write_attribute("Id", self.next_id().as_str());
-            writer.write_attribute("Type", RS_OFFICE_DOCUMENT_WS);
-            writer.write_attribute("Target", format!("worksheets/sheet{}.xml", i).as_str());
-            writer.end_element();
-        }
+
         // shared string
         writer.start_element("Relationship");
         writer.write_attribute("Id", self.next_id().as_str());

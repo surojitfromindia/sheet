@@ -1,4 +1,4 @@
-use std::{collections::HashSet, io::Write};
+use std::{collections::HashSet, fs::File, io::Write};
 
 use crate::{
     cell::CellValue,
@@ -76,15 +76,16 @@ impl WorkBook {
 
     fn create_sheets(&self, writer: &mut XmlWriter) {
         writer.start_element("sheets");
-        let mut r_id: u8 = 2;
+        let mut r_id: u8 = 1;
         // for each worksheet print xml
-        for work_sheet in self.work_sheets.iter() {
+        for (inx, work_sheet) in self.work_sheets.iter().enumerate() {
             writer.start_element("sheet");
             writer.write_attribute("name", work_sheet.name.as_str());
             writer.write_attribute("state", "visiable");
             let current_rid = format!("rId{}", r_id.to_string());
             // todo: add sheet to content type and get back the id, which will be set in here.
             writer.write_attribute("r:id", current_rid.as_str());
+            writer.write_attribute("sheetId", (inx + 1).to_string().as_str());
             r_id += 1;
         }
         writer.end_element();
@@ -93,11 +94,19 @@ impl WorkBook {
     // todo: we need to cover every thing here, be the following code cosume everthing.
     fn to_xml(&mut self) -> String {
         let mut writer = XmlWriter::new(Options::default());
-        writer.write_declaration();
-        writer.start_element("workbook");
 
-        self.create_file_version(&mut writer);
-        self.create_book_views(&mut writer);
+        writer.start_element("workbook");
+        writer.write_attribute(
+            "xmlns",
+            "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+        );
+        writer.write_attribute(
+            "xmlns:r",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        );
+
+        // self.create_file_version(&mut writer);
+        // self.create_book_views(&mut writer);
         self.create_sheets(&mut writer);
 
         writer.end_element();
@@ -117,7 +126,11 @@ impl WorkBook {
             .work_book_relation_ship
             .to_work_book_rel_xml(0, self.work_sheets.len());
 
-        let mut zip = zip::ZipWriter::new(std::fs::File::create("work_book.xlsx").unwrap());
+        println!("{}", work_book_xml);
+        println!("{}", work_book_rs_xml);
+
+        let cursor = std::io::Cursor::new(Vec::new());
+        let mut zip = zip::ZipWriter::new(cursor);
 
         // content type root
         zip.start_file("[Content_Types].xml", SimpleFileOptions::default())
@@ -149,6 +162,7 @@ impl WorkBook {
         // add sheets
         for (i, work_sheet) in self.work_sheets.into_iter().enumerate() {
             let sheet_xml = work_sheet.to_xml();
+            // println!("{}", sheet_xml);
             let sheet_name = format!("xl/worksheets/sheet{}.xml", i + 1);
             zip.start_file(sheet_name, SimpleFileOptions::default())
                 .unwrap();
@@ -166,6 +180,10 @@ impl WorkBook {
         zip.write_all(work_book_xml.as_bytes()).unwrap();
 
         // done , save the file in the disk.
-        zip.finish().unwrap();
+        // how to print a cursor
+        let cursor = zip.finish().unwrap();
+        let data = cursor.into_inner();
+        let mut file = File::create("test.xlsx").unwrap();
+        file.write_all(&data).unwrap();
     }
 }

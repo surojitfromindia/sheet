@@ -15,7 +15,7 @@ static SST_XMLNS: &str = "http://schemas.openxmlformats.org/spreadsheetml/2006/m
 impl SharedStrings {
     pub fn new() -> Self {
         SharedStrings {
-            next_index: 1,
+            next_index: 0,
             s_map: HashMap::new(),
             total_counter: 0,
         }
@@ -41,7 +41,6 @@ impl SharedStrings {
     pub fn to_xml(self) -> String {
         let mut writer = xmlwriter::XmlWriter::new(Options::default());
         // todo: write declarion manually.
-        writer.write_declaration();
         writer.start_element("sst");
         writer.write_attribute("xmls", SST_XMLNS);
         writer.write_attribute("count", &self.total_counter.to_string());

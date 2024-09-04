@@ -28,7 +28,6 @@ impl WorkSheet {
 
     pub fn to_xml(self) -> String {
         let mut writer = XmlWriter::new(Options::default());
-        writer.write_declaration();
         writer.start_element("worksheet");
         writer.write_attribute(
             "xmlns",
@@ -37,15 +36,6 @@ impl WorkSheet {
         writer.write_attribute(
             "xmlns:r",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-        );
-        writer.write_attribute(
-            "xmlns:mc",
-            "http://schemas.openxmlformats.org/markup-compatibility/2006",
-        );
-        writer.write_attribute("mc:Ignorable", "x14ac");
-        writer.write_attribute(
-            "xmlns:x14ac",
-            "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac",
         );
 
         writer.start_element("sheetData");

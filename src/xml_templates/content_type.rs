@@ -30,16 +30,20 @@ impl ContentType {
                 // work book
                 Override {
                     content_type: WORK_BOOK_CONTENT_TYPE.to_string(),
-                    part_name: String::from("/x1/workbook.xml"),
+                    part_name: String::from("/xl/workbook.xml"),
+                },
+                Override {
+                    content_type: RS_CONTENT_TYPE.to_string(),
+                    part_name: String::from("/_rels/.rels"),
+                },
+                Override {
+                    content_type: RS_CONTENT_TYPE.to_string(),
+                    part_name: String::from("/xl/_rels/workbook.xml.rels"),
                 },
                 // sharedStrings
                 Override {
                     content_type: SS_CONTENT_TYPE.to_string(),
-                    part_name: String::from("/x1/sharedStrings.xml"),
-                },
-                Override {
-                    content_type: RS_CONTENT_TYPE.to_string(),
-                    part_name: String::from("/x1/_rels/workbook.xml.relsl"),
+                    part_name: String::from("/xl/sharedStrings.xml"),
                 },
             ],
         }
@@ -50,7 +54,7 @@ impl ContentType {
         self.overrides.push(Override {
             content_type: WORK_SHEET_CONTENT_TYPE.to_string(),
             // sheet1, ... sheet12
-            part_name: format!("/x1/worksheets/sheet{}", self.next_sheet_number),
+            part_name: format!("/xl/worksheets/sheet{}.xml", self.next_sheet_number),
         });
         // increase the sheet counter by 1
         self.next_sheet_number += 1;
