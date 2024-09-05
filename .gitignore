@@ -1,1 +1,3 @@
 /target
+# anything that ends with .zip or .xlsx
+/.*\.(zip|xlsx)$

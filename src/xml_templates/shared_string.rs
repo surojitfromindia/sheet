@@ -5,7 +5,8 @@ use xmlwriter::Options;
 #[derive(Debug)]
 pub struct SharedStrings {
     // first one is the index, second one is the total counter
-    pub s_map: HashMap<String, u32>,
+    s_map: HashMap<String, u32>,
+    s_vec: Vec<String>,
     pub next_index: u32,
     pub total_counter: u32,
 }
@@ -17,6 +18,7 @@ impl SharedStrings {
         SharedStrings {
             next_index: 0,
             s_map: HashMap::new(),
+            s_vec: Vec::new(),
             total_counter: 0,
         }
     }
@@ -30,6 +32,7 @@ impl SharedStrings {
         } else {
             // insert and increament the next_counter by 1
             let key = mem::replace(st, self.next_index.to_string());
+            self.s_vec.push(key.clone());
             self.s_map.insert(key, self.next_index);
             {
                 let temp = self.next_index;
@@ -42,10 +45,11 @@ impl SharedStrings {
         let mut writer = xmlwriter::XmlWriter::new(Options::default());
         // todo: write declarion manually.
         writer.start_element("sst");
-        writer.write_attribute("xmls", SST_XMLNS);
+        writer.write_attribute("xmlns", SST_XMLNS);
         writer.write_attribute("count", &self.total_counter.to_string());
         writer.write_attribute("uniqueCount", &self.s_map.len());
-        for elem in self.s_map.keys() {
+        // order the hashmap by value
+        for elem in self.s_vec.iter() {
             writer.start_element("si");
             writer.start_element("t");
             writer.write_text(&elem);
