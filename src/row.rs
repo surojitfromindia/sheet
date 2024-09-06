@@ -1,4 +1,4 @@
-use std::num::ParseFloatError;
+use std::{collections::HashSet, error::Error, num::ParseFloatError};
 
 use crate::traits;
 use traits::XMLString;
@@ -14,12 +14,30 @@ pub struct Cell {
     pub value: CellValue,
     formula: Option<String>,
     attributes: CellAttributes,
+    col_row_ref: (String, String),
 }
 
 pub struct Row {
     cells: Vec<Cell>,
     row_number: usize,
     col_reference: char,
+    cell_reference_set: HashSet<String>,
+}
+
+fn split_cell_ref(cell_ref: &str) -> Result<(String, String), &'static str> {
+    let mut col_ref = String::new();
+    let mut row_ref = String::new();
+    for c in cell_ref.chars() {
+        if c.is_alphabetic() {
+            col_ref.push(c);
+        } else {
+            row_ref.push(c);
+        }
+    }
+    if col_ref.is_empty() || row_ref.is_empty() {
+        return Err("Invalid cell reference");
+    }
+    Ok((col_ref, row_ref))
 }
 
 impl Row {
@@ -28,35 +46,40 @@ impl Row {
             row_number,
             col_reference: 'A',
             cells: Vec::new(),
+            cell_reference_set: HashSet::new(),
         }
     }
 
-    pub fn add_cell_of_string(&mut self, value: String) -> &mut Cell {
-        let mut cell = Cell::of_string(value);
+    pub fn add_string(&mut self, value: String) -> &mut Cell {
         let cell_reference = self.get_next_cell_ref();
-        cell.set_reference(cell_reference);
+        let cell = Cell::from_string(value, cell_reference);
         self.cells.push(cell);
         self.cells.last_mut().unwrap()
     }
 
-    pub fn add_cell_of_number(&mut self, value: String) -> Result<&mut Cell, ParseFloatError> {
-        let mut cell = Cell::of_number(value)?;
+    pub fn add_number(&mut self, value: String) -> Result<&mut Cell, ParseFloatError> {
         let cell_reference = self.get_next_cell_ref();
-        cell.set_reference(cell_reference);
+        let cell = Cell::from_number(value, cell_reference)?;
         self.cells.push(cell);
         Ok(self.cells.last_mut().unwrap())
     }
 
-    pub fn add_cell(&mut self, mut cell: Cell) -> &mut Cell {
-        // check if the reference is present
-        // if not, set the reference
-        if cell.attributes.reference.is_none() {
-            let cell_reference = self.get_next_cell_ref();
-            cell.set_reference(cell_reference);
+    /// add a cell to an existing row
+    /// can fail if the given reference is already present or not valid.
+    pub fn add_cell(&mut self, cell: Cell) -> Result<&mut Cell, &'static str> {
+        let cell_reference = cell.attributes.reference.as_ref().unwrap();
+        if self.cell_reference_set.contains(cell_reference) {
+            return Err("Cell reference already exists");
+        }
+        let (_, row_ref) = split_cell_ref(cell_reference).unwrap();
+        if row_ref != self.row_number.to_string() {
+            return Err("Invalid row reference");
         }
 
+        // update the set
+        self.cell_reference_set.insert(cell_reference.clone());
         self.cells.push(cell);
-        self.cells.last_mut().unwrap()
+        Ok(self.cells.last_mut().unwrap())
     }
 
     pub fn get_cells_mut(&mut self) -> &mut Vec<Cell> {
@@ -66,7 +89,9 @@ impl Row {
     fn get_next_cell_ref(&mut self) -> String {
         let col_reference = self.col_reference;
         self.col_reference = (self.col_reference as u8 + 1) as char;
-        format!("{}{}", col_reference, self.row_number)
+        let s = format!("{}{}", col_reference, self.row_number);
+        self.cell_reference_set.insert(s.clone());
+        s
     }
 }
 
@@ -85,47 +110,29 @@ impl XMLString for Row {
 struct CellAttributes {
     reference: Option<String>,
 }
-impl Default for CellAttributes {
-    fn default() -> Self {
-        CellAttributes { reference: None }
-    }
-}
 
 impl Cell {
-    // pub fn of_string_with_reference(value: String, reference: String) -> Cell {
-    //     let mut cell = Cell::of_string(value);
-    //     cell.set_reference(reference);
-    //     cell
-    // }
-
-    // pub fn of_number_with_reference(
-    //     value: String,
-    //     reference: String,
-    // ) -> Result<Cell, ParseFloatError> {
-    //     let mut cell = Cell::of_number(value)?;
-    //     cell.set_reference(reference);
-    //     Ok(cell)
-    // }
-
-    fn of_string(value: String) -> Cell {
+    pub fn from_string(value: String, reference: String) -> Cell {
         Cell {
             value: CellValue::CString(value),
             formula: None,
-            attributes: CellAttributes::default(),
+            col_row_ref: split_cell_ref(&reference).unwrap(),
+            attributes: CellAttributes {
+                reference: Some(reference),
+            },
         }
     }
 
-    fn of_number(value: String) -> Result<Cell, ParseFloatError> {
+    pub fn from_number(value: String, reference: String) -> Result<Cell, ParseFloatError> {
         let _ = value.parse::<f64>()?;
         Ok(Cell {
             value: CellValue::CNumber(value),
             formula: None,
-            attributes: CellAttributes::default(),
+            col_row_ref: split_cell_ref(&reference).unwrap(),
+            attributes: CellAttributes {
+                reference: Some(reference),
+            },
         })
-    }
-
-    pub fn set_reference(&mut self, reference: String) {
-        self.attributes.reference = Some(reference);
     }
 }
 
