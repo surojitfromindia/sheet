@@ -1,26 +1,14 @@
-use std::{collections::HashSet, error::Error, num::ParseFloatError};
+use std::{collections::HashSet, num::ParseFloatError};
 
+use crate::cell::Cell;
 use crate::traits;
 use traits::XMLString;
 use xmlwriter::*;
 
-pub enum CellValue {
-    CString(String),
-    CNumber(String),
-    Empty,
-}
-
-pub struct Cell {
-    pub value: CellValue,
-    formula: Option<String>,
-    attributes: CellAttributes,
-    col_row_ref: (String, String),
-}
-
 pub struct Row {
     cells: Vec<Cell>,
     row_number: usize,
-    col_reference: char,
+    col_reference: String,
     cell_reference_set: HashSet<String>,
 }
 
@@ -44,7 +32,7 @@ impl Row {
     pub fn new(row_number: usize) -> Row {
         Row {
             row_number,
-            col_reference: 'A',
+            col_reference: "A".to_string(),
             cells: Vec::new(),
             cell_reference_set: HashSet::new(),
         }
@@ -52,7 +40,14 @@ impl Row {
 
     pub fn add_string(&mut self, value: String) -> &mut Cell {
         let cell_reference = self.get_next_cell_ref();
-        let cell = Cell::from_string(value, cell_reference);
+        let cell = Cell::from_string(value, cell_reference, false);
+        self.cells.push(cell);
+        self.cells.last_mut().unwrap()
+    }
+
+    pub fn add_inline_string(&mut self, value: String) -> &mut Cell {
+        let cell_reference = self.get_next_cell_ref();
+        let cell = Cell::from_string(value, cell_reference, true);
         self.cells.push(cell);
         self.cells.last_mut().unwrap()
     }
@@ -71,7 +66,7 @@ impl Row {
         if self.cell_reference_set.contains(cell_reference) {
             return Err("Cell reference already exists");
         }
-        let (_, row_ref) = split_cell_ref(cell_reference).unwrap();
+        let (col_ref, row_ref) = split_cell_ref(cell_reference).unwrap();
         if row_ref != self.row_number.to_string() {
             return Err("Invalid row reference");
         }
@@ -79,6 +74,7 @@ impl Row {
         // update the set
         self.cell_reference_set.insert(cell_reference.clone());
         self.cells.push(cell);
+        self.col_reference = col_ref;
         Ok(self.cells.last_mut().unwrap())
     }
 
@@ -87,11 +83,36 @@ impl Row {
     }
 
     fn get_next_cell_ref(&mut self) -> String {
-        let col_reference = self.col_reference;
-        self.col_reference = (self.col_reference as u8 + 1) as char;
-        let s = format!("{}{}", col_reference, self.row_number);
-        self.cell_reference_set.insert(s.clone());
-        s
+        let current_col_ref = &mut self.col_reference;
+
+        // Convert the current column reference ('A' = 1, 'B' = 2, ..., 'Z' = 26, 'AA' = 27, etc.)
+        let mut col_chars: Vec<char> = current_col_ref.chars().collect();
+
+        let mut i = col_chars.len() - 1;
+        while i >= 0 {
+            if col_chars[i] == 'Z' {
+                col_chars[i] = 'A';
+                if i == 0 {
+                    // Prepend 'A' to the string if it overflows at the first character (e.g., "Z" -> "AA")
+                    col_chars.insert(0, 'A');
+                    break;
+                }
+                i -= 1;
+            } else {
+                col_chars[i] = ((col_chars[i] as u8) + 1) as char;
+                break;
+            }
+        }
+
+        // Combine the incremented column reference with the row number
+        let cell_ref = format!("{}{}", current_col_ref, self.row_number);
+
+        let next_col_ref: String = col_chars.into_iter().collect();
+        *current_col_ref = next_col_ref;
+
+        // Insert the generated cell reference into the set
+        self.cell_reference_set.insert(cell_ref.clone());
+        cell_ref
     }
 }
 
@@ -106,60 +127,25 @@ impl XMLString for Row {
     }
 }
 
-// excel cell attributes
-struct CellAttributes {
-    reference: Option<String>,
+pub struct ColMovement<'a> {
+    row: &'a mut Row,
 }
 
-impl Cell {
-    pub fn from_string(value: String, reference: String) -> Cell {
-        Cell {
-            value: CellValue::CString(value),
-            formula: None,
-            col_row_ref: split_cell_ref(&reference).unwrap(),
-            attributes: CellAttributes {
-                reference: Some(reference),
-            },
-        }
+impl<'a> ColMovement<'a> {
+    pub fn new(row: &'a mut Row) -> ColMovement<'a> {
+        ColMovement { row }
     }
 
-    pub fn from_number(value: String, reference: String) -> Result<Cell, ParseFloatError> {
-        let _ = value.parse::<f64>()?;
-        Ok(Cell {
-            value: CellValue::CNumber(value),
-            formula: None,
-            col_row_ref: split_cell_ref(&reference).unwrap(),
-            attributes: CellAttributes {
-                reference: Some(reference),
-            },
-        })
+    /// move to next column
+    pub fn next(&mut self) -> String {
+        self.row.get_next_cell_ref()
     }
-}
 
-impl XMLString for Cell {
-    fn to_xml(self, writer: &mut XmlWriter) {
-        writer.start_element("c");
-        writer.write_attribute("r", &self.attributes.reference.unwrap());
-        if let Some(formula) = self.formula {
-            writer.start_element("formula");
-            writer.write_text(&formula);
-            writer.end_element();
+    /// skip n columns
+    pub fn skip(&mut self, n: usize) -> String {
+        for _ in 0..n {
+            self.row.get_next_cell_ref();
         }
-        match self.value {
-            CellValue::CString(v) => {
-                writer.write_attribute("t", "s");
-                writer.start_element("v");
-                writer.write_text(&v);
-                writer.end_element();
-            }
-            CellValue::CNumber(v) => {
-                writer.write_attribute("t", "n");
-                writer.start_element("v");
-                writer.write_text(&v);
-                writer.end_element();
-            }
-            CellValue::Empty => {}
-        }
-        writer.end_element();
+        self.row.get_next_cell_ref()
     }
 }
