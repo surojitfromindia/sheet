@@ -5,9 +5,14 @@ use crate::traits;
 use traits::XMLString;
 use xmlwriter::*;
 
+static ALP: [char; 26] = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+    'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+];
 pub struct Row {
     cells: Vec<Cell>,
     row_number: usize,
+    column_number: usize,
     col_reference: String,
     cell_reference_set: HashSet<String>,
 }
@@ -34,6 +39,7 @@ impl Row {
             row_number,
             col_reference: "A".to_string(),
             cells: Vec::new(),
+            column_number: 0,
             cell_reference_set: HashSet::new(),
         }
     }
@@ -82,37 +88,34 @@ impl Row {
         &mut self.cells
     }
 
+    
     fn get_next_cell_ref(&mut self) -> String {
-        let current_col_ref = &mut self.col_reference;
-
-        // Convert the current column reference ('A' = 1, 'B' = 2, ..., 'Z' = 26, 'AA' = 27, etc.)
-        let mut col_chars: Vec<char> = current_col_ref.chars().collect();
-
-        let mut i = col_chars.len() - 1;
-        while i >= 0 {
-            if col_chars[i] == 'Z' {
-                col_chars[i] = 'A';
-                if i == 0 {
-                    // Prepend 'A' to the string if it overflows at the first character (e.g., "Z" -> "AA")
-                    col_chars.insert(0, 'A');
-                    break;
-                }
-                i -= 1;
-            } else {
-                col_chars[i] = ((col_chars[i] as u8) + 1) as char;
-                break;
+        if self.column_number==0 {
+            self.column_number += 1;
+            return format!("A{}",self.row_number)
+        }
+        else{
+            let mut result = Vec::with_capacity(3);
+            let mut idx = self.column_number; // Make a mutable copy of the index
+            // Process the index until it is fully converted
+            while idx > 0 {
+                let remainder = (idx % 26) as usize; // Find the remainder when divided by 26
+                let ch = ALP.get(remainder).unwrap();
+                result.push(ch); // Append character to result
+                idx = idx / 26; // Update index for next iteration
             }
+            self.column_number += 1;
+            return  format!(
+                "{}{}",
+                result.into_iter().collect::<String>(),
+                self.row_number
+            )
         }
 
-        // Combine the incremented column reference with the row number
-        let cell_ref = format!("{}{}", current_col_ref, self.row_number);
+      
+        // Reverse the result as characters are accumulated in reverse order
 
-        let next_col_ref: String = col_chars.into_iter().collect();
-        *current_col_ref = next_col_ref;
-
-        // Insert the generated cell reference into the set
-        self.cell_reference_set.insert(cell_ref.clone());
-        cell_ref
+      
     }
 }
 
