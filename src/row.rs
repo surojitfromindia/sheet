@@ -13,7 +13,7 @@ pub struct Row {
     cells: Vec<Cell>,
     row_number: usize,
     column_number: usize,
-    col_reference: String,
+    next_col_referece: String,
     cell_reference_set: HashSet<String>,
 }
 
@@ -37,9 +37,9 @@ impl Row {
     pub fn new(row_number: usize) -> Row {
         Row {
             row_number,
-            col_reference: "A".to_string(),
+            next_col_referece: "A".to_string(),
             cells: Vec::new(),
-            column_number: 0,
+            column_number: 1,
             cell_reference_set: HashSet::new(),
         }
     }
@@ -72,15 +72,17 @@ impl Row {
         if self.cell_reference_set.contains(cell_reference) {
             return Err("Cell reference already exists");
         }
-        let (col_ref, row_ref) = split_cell_ref(cell_reference).unwrap();
-        if row_ref != self.row_number.to_string() {
+        let (column_ref, row_number) = split_cell_ref(cell_reference).unwrap();
+        if row_number != self.row_number.to_string() {
             return Err("Invalid row reference");
         }
 
         // update the set
         self.cell_reference_set.insert(cell_reference.clone());
         self.cells.push(cell);
-        self.col_reference = col_ref;
+        self.next_col_referece = column_ref;
+        // todo: update the coulumn_number;
+        self.column_number = self.column_ref_to_number(self.next_col_referece.as_str());
         Ok(self.cells.last_mut().unwrap())
     }
 
@@ -88,34 +90,42 @@ impl Row {
         &mut self.cells
     }
 
-    
     fn get_next_cell_ref(&mut self) -> String {
-        if self.column_number==0 {
+        println!("<{}>", self.column_number);
+
+        if self.column_number == 0 {
             self.column_number += 1;
-            return format!("A{}",self.row_number)
-        }
-        else{
+            return format!("A{}", self.row_number);
+        } else {
             let mut result = Vec::with_capacity(3);
             let mut idx = self.column_number; // Make a mutable copy of the index
-            // Process the index until it is fully converted
+                                              // Process the index until it is fully converted
             while idx > 0 {
-                let remainder = (idx % 26) as usize; // Find the remainder when divided by 26
+                let remainder = ((idx - 1) % 26) as usize; // Find the remainder when divided by 26
                 let ch = ALP.get(remainder).unwrap();
                 result.push(ch); // Append character to result
                 idx = idx / 26; // Update index for next iteration
             }
             self.column_number += 1;
-            return  format!(
+            return format!(
                 "{}{}",
-                result.into_iter().collect::<String>(),
+                result.into_iter().rev().collect::<String>(),
                 self.row_number
-            )
+            );
+        }
+    }
+
+    fn column_ref_to_number(&self, s: &str) -> usize {
+        let mut index = 0;
+
+        for ch in s.chars() {
+            // Convert character to its 1-based value
+            let value = (ch as u8 - b'A' + 1) as usize;
+            // Calculate the index by considering base-26 positional values
+            index = index * 26 + value;
         }
 
-      
-        // Reverse the result as characters are accumulated in reverse order
-
-      
+        index
     }
 }
 
@@ -140,15 +150,15 @@ impl<'a> ColMovement<'a> {
     }
 
     /// move to next column
-    pub fn next(&mut self) -> String {
-        self.row.get_next_cell_ref()
+    pub fn next(&mut self) {
+        self.row.get_next_cell_ref();
     }
 
     /// skip n columns
-    pub fn skip(&mut self, n: usize) -> String {
+    pub fn skip(&mut self, n: usize) {
         for _ in 0..n {
             self.row.get_next_cell_ref();
         }
-        self.row.get_next_cell_ref()
+        println!(" > {} ", self.row.column_number);
     }
 }

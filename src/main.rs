@@ -26,7 +26,7 @@ fn main() {
     row.add_cell(manual_cell).unwrap();
 
     let mut col_mov = ColMovement::new(row);
-    col_mov.next();
+    col_mov.skip(19);
     row.add_number("53".to_string()).unwrap();
 
     work_book.add_sheet(work_sheet_1);
