@@ -13,7 +13,6 @@ pub struct Row {
     cells: Vec<Cell>,
     row_number: usize,
     column_number: usize,
-    next_col_referece: String,
     cell_reference_set: HashSet<String>,
 }
 
@@ -37,7 +36,7 @@ impl Row {
     pub fn new(row_number: usize) -> Row {
         Row {
             row_number,
-            next_col_referece: "A".to_string(),
+
             cells: Vec::new(),
             column_number: 1,
             cell_reference_set: HashSet::new(),
@@ -80,9 +79,8 @@ impl Row {
         // update the set
         self.cell_reference_set.insert(cell_reference.clone());
         self.cells.push(cell);
-        self.next_col_referece = column_ref;
         // todo: update the coulumn_number;
-        self.column_number = self.column_ref_to_number(self.next_col_referece.as_str());
+        self.column_number = self.column_ref_to_number(column_ref.as_str());
         Ok(self.cells.last_mut().unwrap())
     }
 
