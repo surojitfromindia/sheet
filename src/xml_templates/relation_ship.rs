@@ -16,7 +16,8 @@ static RS_OFFICE_DOCUMENT_WS_PAK: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
 static RS_OFFICE_DOCUMENT_SS_PAK: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings";
-
+static RS_OFFICE_DOCUMENT_STYLE: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles";
 impl RelationShip {
     pub fn new() -> Self {
         RelationShip { next_seq_number: 1 }
@@ -56,11 +57,11 @@ impl RelationShip {
         }
 
         // styles
-        // writer.start_element("Relationship");
-        // writer.write_attribute("Id", self.next_id().as_str());
-        // writer.write_attribute("Type", RS_OFFICE_DOCUMENT_STYLE);
-        // writer.write_attribute("Target", "styles.xml");
-        // writer.end_element();
+        writer.start_element("Relationship");
+        writer.write_attribute("Id", self.next_id().as_str());
+        writer.write_attribute("Type", RS_OFFICE_DOCUMENT_STYLE);
+        writer.write_attribute("Target", "styles.xml");
+        writer.end_element();
 
         // themes
         for i in 1..=no_of_themes {
