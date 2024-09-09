@@ -18,8 +18,6 @@ static WORK_SHEET_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
 static SS_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
-static STYLE_CONTENT_TYPE: &str =
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml";
 static RS_CONTENT_TYPE: &str = "application/vnd.openxmlformats-package.relationships+xml";
 
 impl ContentType {
