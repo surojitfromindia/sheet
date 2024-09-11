@@ -69,19 +69,25 @@ impl XMLString for FontStyle {
         writer.end_element();
 
         // bold
-        writer.start_element("b");
-        writer.write_attribute("val", if self.bold { "true" } else { "false" });
-        writer.end_element();
+        if self.bold {
+            writer.start_element("b");
+            writer.write_attribute("val", "true");
+            writer.end_element();
+        }
 
         // italic
-        writer.start_element("i");
-        writer.write_attribute("val", if self.italic { "true" } else { "false" });
-        writer.end_element();
+        if self.italic {
+            writer.start_element("i");
+            writer.write_attribute("val", "true");
+            writer.end_element();
+        }
 
         // strike
-        writer.start_element("strike");
-        writer.write_attribute("val", if self.strike { "true" } else { "false" });
-        writer.end_element();
+        if self.strike {
+            writer.start_element("u");
+            writer.write_attribute("val", "true");
+            writer.end_element();
+        }
 
         // underline
         // match self.undeline {
@@ -121,21 +127,24 @@ struct CellXf {
     font_id: usize,
     fill_id: usize,
     border_id: usize,
+    num_fmt_id: usize,
 }
 impl Default for CellXf {
     fn default() -> Self {
         Self {
             font_id: 0,
             fill_id: 0,
+            num_fmt_id: 164,
             border_id: 0,
         }
     }
 }
 
 impl CellXf {
-    pub fn new(font_id: usize) -> Self {
+    pub fn new(font_id: usize, num_fmt_id: usize) -> Self {
         Self {
             font_id,
+            num_fmt_id,
             ..Default::default()
         }
     }
@@ -147,8 +156,13 @@ impl CellXf {
 
 impl XMLString for CellXf {
     fn to_xml(self, writer: &mut xmlwriter::XmlWriter) {
+        println!("{:?}", self);
         writer.start_element("xf");
         writer.write_attribute("fontId", &self.font_id.to_string());
+        writer.write_attribute("numFmtId", &self.num_fmt_id.to_string());
+
+        writer.write_attribute("applyFont", "true");
+
         // writer.write_attribute("fillId", &self.fill_id.to_string());
         // writer.write_attribute("borderId", &self.border_id.to_string());
         writer.end_element();
@@ -161,6 +175,7 @@ pub struct Style {
     fonts_map: HashMap<String, (usize, FontStyle)>,
     nex_uique_xf_count: usize,
     cell_xfs_map: HashMap<String, (usize, CellXf)>,
+    num_fmts: Vec<NumFmt>,
 }
 
 impl Default for Style {
@@ -170,6 +185,7 @@ impl Default for Style {
             nex_uique_xf_count: 0,
             fonts_map: HashMap::new(),
             cell_xfs_map: HashMap::new(),
+            num_fmts: vec![NumFmt::new(164, "General")],
         }
     }
 }
@@ -209,13 +225,13 @@ impl Style {
             None => 0,
         };
 
-        let cell_xf = CellXf::new(font_id);
+        let cell_xf = CellXf::new(font_id, 164);
         if let Some(&index) = self.cell_xfs_map.get(&cell_xf.unique_id()).as_ref() {
             index.0
         } else {
             let index = self.nex_uique_xf_count;
 
-            let cell_xf = CellXf::new(font_id);
+            let cell_xf = CellXf::new(font_id, 164);
 
             self.cell_xfs_map
                 .insert(cell_xf.unique_id(), (self.nex_uique_xf_count, cell_xf));
@@ -228,6 +244,14 @@ impl Style {
         let mut writer = xmlwriter::XmlWriter::new(xmlwriter::Options::default());
         writer.start_element("styleSheet");
         writer.write_attribute("xmlns", SS_XMLNS);
+
+        // write numFmts
+        writer.start_element("numFmts");
+        writer.write_attribute("count", &self.num_fmts.len().to_string());
+        for num_fmt in self.num_fmts {
+            num_fmt.to_xml(&mut writer);
+        }
+        writer.end_element();
 
         // write fonts
         writer.start_element("fonts");
@@ -267,5 +291,29 @@ impl Style {
         writer.end_element();
 
         writer.end_document()
+    }
+}
+
+#[derive(Debug)]
+struct NumFmt {
+    format_id: usize,
+    format_code: String,
+}
+
+impl NumFmt {
+    pub fn new(format_id: usize, format_code: &str) -> Self {
+        Self {
+            format_id,
+            format_code: format_code.to_string(),
+        }
+    }
+}
+
+impl XMLString for NumFmt {
+    fn to_xml(self, writer: &mut xmlwriter::XmlWriter) {
+        writer.start_element("numFmt");
+        writer.write_attribute("numFmtId", &self.format_id.to_string());
+        writer.write_attribute("formatCode", &self.format_code);
+        writer.end_element();
     }
 }

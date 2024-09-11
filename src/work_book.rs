@@ -156,7 +156,7 @@ impl WorkBook {
         // add sheets
         for (i, work_sheet) in self.work_sheets.into_iter().enumerate() {
             let sheet_xml = work_sheet.to_xml();
-            println!("{}", sheet_xml);
+            // println!("{}", sheet_xml);
             let sheet_name = format!("xl/worksheets/sheet{}.xml", i + 1);
             zip.start_file(sheet_name, SimpleFileOptions::default())
                 .unwrap();
@@ -182,5 +182,8 @@ impl WorkBook {
         let data = cursor.into_inner();
         let mut file = File::create("test.xlsx").unwrap();
         file.write_all(&data).unwrap();
+
+        let mut zip_file = File::create("test.zip").unwrap();
+        zip_file.write_all(&data).unwrap();
     }
 }
