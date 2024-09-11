@@ -2,12 +2,27 @@ use std::num::ParseFloatError;
 
 use xmlwriter::XmlWriter;
 
-use crate::traits::XMLString;
+use crate::{traits::XMLString, xml_templates::style::FontStyle};
 
-pub struct CellAttributes {
-    pub reference: Option<String>,
+#[derive(Debug)]
+pub struct CellStyle {
+    pub font_style: FontStyle,
 }
 
+impl Default for CellStyle {
+    fn default() -> Self {
+        CellStyle {
+            font_style: FontStyle::default(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct CellAttributes {
+    pub reference: Option<String>,
+    style_index: Option<String>,
+}
+#[derive(Debug)]
 pub enum CellValue {
     CString(String),
     CNumber(String),
@@ -18,10 +33,12 @@ pub enum CellValue {
     Empty,
 }
 
+#[derive(Debug)]
 pub struct Cell {
     pub value: CellValue,
     formula: Option<String>,
-    pub attributes: CellAttributes,
+    attributes: CellAttributes,
+    cell_style: Option<CellStyle>,
 }
 
 impl Cell {
@@ -36,7 +53,9 @@ impl Cell {
             formula: None,
             attributes: CellAttributes {
                 reference: Some(reference),
+                style_index: None,
             },
+            cell_style: None,
         }
     }
 
@@ -47,8 +66,25 @@ impl Cell {
             formula: None,
             attributes: CellAttributes {
                 reference: Some(reference),
+                style_index: None,
             },
+            cell_style: None,
         })
+    }
+
+    pub fn get_attributes(&self) -> &CellAttributes {
+        &self.attributes
+    }
+
+    pub fn get_style(&mut self) -> &Option<CellStyle> {
+        &self.cell_style
+    }
+
+    pub fn set_font_style(&mut self, style: FontStyle) {
+        self.cell_style = Some(CellStyle { font_style: style });
+    }
+    pub fn set_style_index(&mut self, index: usize) {
+        self.attributes.style_index = Some(index.to_string());
     }
 }
 
@@ -60,6 +96,9 @@ impl XMLString for Cell {
             writer.start_element("formula");
             writer.write_text(&formula);
             writer.end_element();
+        }
+        if let Some(style) = self.attributes.style_index {
+            writer.write_attribute("s", &style);
         }
         match self.value {
             CellValue::CString(v) => {
@@ -104,6 +143,7 @@ impl XMLString for Cell {
 
             CellValue::Empty => {}
         }
+
         writer.end_element();
     }
 }

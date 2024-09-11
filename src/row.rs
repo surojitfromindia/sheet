@@ -67,7 +67,7 @@ impl Row {
     /// add a cell to an existing row
     /// can fail if the given reference is already present or not valid.
     pub fn add_cell(&mut self, cell: Cell) -> Result<&mut Cell, &'static str> {
-        let cell_reference = cell.attributes.reference.as_ref().unwrap();
+        let cell_reference = cell.get_attributes().reference.as_ref().unwrap();
         if self.cell_reference_set.contains(cell_reference) {
             return Err("Cell reference already exists");
         }

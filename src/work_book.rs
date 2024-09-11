@@ -3,6 +3,7 @@ use crate::{
     work_sheet::WorkSheet,
     xml_templates::{
         content_type::ContentType, relation_ship::RelationShip, shared_string::SharedStrings,
+        style::Style,
     },
 };
 use std::{collections::HashSet, fs::File, io::Write};
@@ -13,6 +14,7 @@ pub struct WorkBook {
     pub work_sheets: Vec<WorkSheet>,
     pub work_sheet_names: HashSet<String>,
     shared_string: SharedStrings,
+    style: Style,
     content_type: ContentType,
     root_relation_ship: RelationShip,
     work_book_relation_ship: RelationShip,
@@ -26,6 +28,7 @@ impl WorkBook {
 
             // other xmls
             shared_string: SharedStrings::new(),
+            style: Style::new(),
             content_type: ContentType::new(),
             root_relation_ship: RelationShip::new(),
             work_book_relation_ship: RelationShip::new(),
@@ -48,6 +51,12 @@ impl WorkBook {
                         self.shared_string.add_string(v);
                     }
                     _ => {}
+                }
+
+                // cells have style
+                if let Some(i) = cell.get_style().as_ref() {
+                    let sid = self.style.add_cell_xf(Some(&i.font_style));
+                    cell.set_style_index(sid);
                 }
             }
         }
@@ -104,6 +113,10 @@ impl WorkBook {
 
         let ss_xml = self.shared_string.to_xml();
 
+        let style_xml = self.style.to_xml();
+
+        println!("{}", style_xml);
+
         let content_type_xml = self.content_type.to_xml();
 
         let root_rs_xml = self.root_relation_ship.to_root_xml();
@@ -154,6 +167,11 @@ impl WorkBook {
         zip.start_file("xl/sharedStrings.xml", SimpleFileOptions::default())
             .unwrap();
         zip.write_all(ss_xml.as_bytes()).unwrap();
+
+        // add styles
+        zip.start_file("xl/styles.xml", SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(style_xml.as_bytes()).unwrap();
 
         // add workbook
         zip.start_file("xl/workbook.xml", SimpleFileOptions::default())

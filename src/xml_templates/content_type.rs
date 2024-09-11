@@ -20,6 +20,9 @@ static SS_CONTENT_TYPE: &str =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
 static RS_CONTENT_TYPE: &str = "application/vnd.openxmlformats-package.relationships+xml";
 
+static STYLES_CONTENT_TYPE: &str =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml";
+
 impl ContentType {
     pub fn new() -> Self {
         ContentType {
@@ -42,6 +45,11 @@ impl ContentType {
                 Override {
                     content_type: SS_CONTENT_TYPE.to_string(),
                     part_name: String::from("/xl/sharedStrings.xml"),
+                },
+                // styles
+                Override {
+                    content_type: STYLES_CONTENT_TYPE.to_string(),
+                    part_name: String::from("/xl/styles.xml"),
                 },
             ],
         }

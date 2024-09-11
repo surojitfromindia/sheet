@@ -7,6 +7,7 @@ pub mod xml_templates;
 
 use work_book::WorkBook;
 use work_sheet::WorkSheet;
+use xml_templates::style::{FontStyle, UnderLine};
 
 struct StudentMarks {
     name: String,
@@ -54,7 +55,16 @@ fn main() {
     }
 
     // add this work sheet to the work book
-    work_book.add_sheet(work_sheet_1);
+    // work_book.add_sheet(work_sheet_1);
+
+    let mut work_sheet_2 = WorkSheet::blank("sheet 2");
+    let row_1 = work_sheet_2.add_blank_row();
+
+    let bold_cell = row_1.add_string("Bold word".to_string());
+    let font_style = FontStyle::new().bold(true).underline(UnderLine::Single);
+    bold_cell.set_font_style(font_style);
+    // add this work sheet to the work book
+    work_book.add_sheet(work_sheet_2);
 
     // save the work book
     work_book.save();
