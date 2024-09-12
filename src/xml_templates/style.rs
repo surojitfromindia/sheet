@@ -162,6 +162,7 @@ impl XMLString for CellXf {
         writer.write_attribute("numFmtId", &self.num_fmt_id.to_string());
 
         writer.write_attribute("applyFont", "true");
+        writer.write_attribute("applyBorder", "false");
 
         // writer.write_attribute("fillId", &self.fill_id.to_string());
         // writer.write_attribute("borderId", &self.border_id.to_string());
@@ -271,6 +272,33 @@ impl Style {
                 font.to_xml(&mut writer);
             }
         }
+        writer.end_element();
+
+        // fills
+        writer.start_element("fills");
+        writer.write_attribute("count", "1");
+        writer.start_element("fill");
+        writer.start_element("patternFill");
+        writer.write_attribute("patternType", "none");
+        writer.end_element();
+        writer.end_element();
+        writer.end_element();
+
+        // borders
+        writer.start_element("borders");
+        writer.write_attribute("count", "1");
+        writer.start_element("border");
+        writer.start_element("left");
+        writer.end_element();
+        writer.start_element("right");
+        writer.end_element();
+        writer.start_element("top");
+        writer.end_element();
+        writer.start_element("bottom");
+        writer.end_element();
+        writer.start_element("diagonal");
+        writer.end_element();
+        writer.end_element();
         writer.end_element();
 
         // write cellXfs
