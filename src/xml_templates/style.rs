@@ -1,15 +1,16 @@
-use std::collections::HashMap;
+use core::fmt;
+use std::{collections::HashMap, fmt::Debug};
 
 use crate::traits::XMLString;
 
 #[derive(Debug)]
 pub struct FontStyle {
-    size: u8,
     name: String,
+    size: u8,
     bold: bool,
     italic: bool,
     strike: bool,
-    undeline: UnderLine,
+    undeline: Option<UnderLine>,
 }
 
 impl FontStyle {
@@ -41,15 +42,19 @@ impl FontStyle {
         self
     }
 
-    pub fn underline(mut self, underline: UnderLine) -> Self {
+    pub fn underline(mut self, underline: Option<UnderLine>) -> Self {
         self.undeline = underline;
         self
     }
 
     fn unqiue_id(&self) -> String {
+        let und: String = self
+            .undeline
+            .as_ref()
+            .map_or_else(|| "u_none".to_string(), |v| format!("{:?}", v));
         format!(
-            "{}{}{}{}{}",
-            self.size, self.name, self.bold, self.italic, self.strike
+            "{}-{}-{}-{}-{}-{}",
+            self.size, self.name, self.bold, self.italic, self.strike, und
         )
     }
 }
@@ -84,29 +89,43 @@ impl XMLString for FontStyle {
 
         // strike
         if self.strike {
-            writer.start_element("u");
-            writer.write_attribute("val", "true");
+            writer.start_element("strike");
             writer.end_element();
         }
 
         // underline
-        // match self.undeline {
-        //     UnderLine::Single => writer.write_attribute("u", "single"),
-        //     UnderLine::Double => writer.write_attribute("u", "double"),
-        //     UnderLine::SingleAcccounting => writer.write_attribute("u", "singleAccounting"),
-        //     UnderLine::DoubleAccouting => writer.write_attribute("u", "doubleAccounting"),
-        //     _ => (),
-        // }
+
+        if let Some(v) = self.undeline {
+            writer.start_element("u");
+            match v {
+                UnderLine::Single => writer.write_attribute("val", "single"),
+                UnderLine::Double => writer.write_attribute("val", "double"),
+                UnderLine::SingleAcccounting => writer.write_attribute("val", "singleAccounting"),
+                UnderLine::DoubleAccouting => writer.write_attribute("val", "doubleAccounting"),
+            }
+            writer.end_element();
+        }
+
         writer.end_element();
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum UnderLine {
     Single,
     Double,
     SingleAcccounting,
     DoubleAccouting,
-    None,
+}
+impl Debug for UnderLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let description = match self {
+            UnderLine::Single => "u_single",
+            UnderLine::Double => "u_double",
+            UnderLine::SingleAcccounting => "u_single_acc",
+            UnderLine::DoubleAccouting => "u_double_acc",
+        };
+        write!(f, "{}", description)
+    }
 }
 
 impl Default for FontStyle {
@@ -117,7 +136,7 @@ impl Default for FontStyle {
             bold: false,
             italic: false,
             strike: false,
-            undeline: UnderLine::None,
+            undeline: None,
         }
     }
 }
@@ -172,20 +191,34 @@ impl XMLString for CellXf {
 
 #[derive(Debug)]
 pub struct Style {
-    nex_uique_font_count: usize,
+    next_unique_font_count: usize,
     fonts_map: HashMap<String, (usize, FontStyle)>,
-    nex_uique_xf_count: usize,
+    next_unique_xf_count: usize,
     cell_xfs_map: HashMap<String, (usize, CellXf)>,
     num_fmts: Vec<NumFmt>,
 }
 
 impl Default for Style {
     fn default() -> Self {
+        // we need to add some default font and cell xf styles to work with
+        // the style properly.
+        let default_font = FontStyle::new();
+        let only_bold_font = FontStyle::new().bold(true);
+        let only_strike_font = FontStyle::new().strike(true);
+        let mut fonts_map = HashMap::new();
+        fonts_map.insert(default_font.unqiue_id(), (0, default_font));
+        fonts_map.insert(only_bold_font.unqiue_id(), (1, only_bold_font));
+        fonts_map.insert(only_strike_font.unqiue_id(), (2, only_strike_font));
+
+        let default_cell_xf = CellXf::new(0, 164);
+        let mut cell_xfs_map = HashMap::new();
+        cell_xfs_map.insert(default_cell_xf.unique_id(), (0, default_cell_xf));
+
         Self {
-            nex_uique_font_count: 0,
-            nex_uique_xf_count: 0,
-            fonts_map: HashMap::new(),
-            cell_xfs_map: HashMap::new(),
+            next_unique_font_count: fonts_map.len(),
+            next_unique_xf_count: cell_xfs_map.len(),
+            fonts_map,
+            cell_xfs_map,
             num_fmts: vec![NumFmt::new(164, "General")],
         }
     }
@@ -212,10 +245,10 @@ impl Style {
                 .strike(font.strike)
                 .underline(font.undeline.clone());
 
-            let index = self.nex_uique_font_count;
+            let index = self.next_unique_font_count;
             self.fonts_map
-                .insert(font.unqiue_id(), (self.nex_uique_font_count, _fonst));
-            self.nex_uique_font_count += 1;
+                .insert(font.unqiue_id(), (self.next_unique_font_count, _fonst));
+            self.next_unique_font_count += 1;
             index
         }
     }
@@ -230,18 +263,20 @@ impl Style {
         if let Some(&index) = self.cell_xfs_map.get(&cell_xf.unique_id()).as_ref() {
             index.0
         } else {
-            let index = self.nex_uique_xf_count;
+            let index = self.next_unique_xf_count;
 
             let cell_xf = CellXf::new(font_id, 164);
 
             self.cell_xfs_map
-                .insert(cell_xf.unique_id(), (self.nex_uique_xf_count, cell_xf));
-            self.nex_uique_xf_count += 1;
+                .insert(cell_xf.unique_id(), (self.next_unique_xf_count, cell_xf));
+            self.next_unique_xf_count += 1;
             index
         }
     }
 
     pub fn to_xml(self) -> String {
+        println!("{:?}", self.fonts_map);
+
         let mut writer = xmlwriter::XmlWriter::new(xmlwriter::Options::default());
         writer.start_element("styleSheet");
         writer.write_attribute("xmlns", SS_XMLNS);

@@ -55,14 +55,28 @@ fn main() {
     }
 
     // add this work sheet to the work book
-    // work_book.add_sheet(work_sheet_1);
+    work_book.add_sheet(work_sheet_1);
 
     let mut work_sheet_2 = WorkSheet::blank("sheet 2");
     let row_1 = work_sheet_2.add_blank_row();
 
+    // bold cell
     let bold_cell = row_1.add_string("Bold word".to_string());
-    let font_style = FontStyle::new().bold(true).underline(UnderLine::Single);
+    let font_style = FontStyle::new().bold(true);
     bold_cell.set_font_style(font_style);
+
+    // strike cell
+    let strike_cell = row_1.add_string("Crossed this word".to_string());
+    let s_style = FontStyle::new().strike(true);
+    strike_cell.set_font_style(s_style);
+
+    let under_line_cell = row_1.add_string("Has undeline".to_string());
+    let und_style = FontStyle::new().underline(Some(UnderLine::Double));
+    under_line_cell.set_font_style(und_style);
+
+    
+
+
     // add this work sheet to the work book
     work_book.add_sheet(work_sheet_2);
 
